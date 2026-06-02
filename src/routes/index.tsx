@@ -91,8 +91,8 @@ function LoginPage() {
 
 function Logo() {
   return (
-    <div className="flex flex-col items-center -mt-4">
-      <span className="font-display text-7xl text-gold leading-none">M</span>
+    <div className="flex flex-col items-center pt-2">
+      <span className="font-display text-7xl text-gold leading-[0.85]">M</span>
       <span className="tracking-[0.4em] text-navy text-sm mt-2">HOTELS</span>
       <div className="flex items-center gap-2 mt-2">
         <span className="block h-px w-12 bg-gold" />
