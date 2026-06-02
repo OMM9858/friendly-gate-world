@@ -20,12 +20,48 @@ type User = {
 };
 
 const SEED: User[] = [
-  { id: "1", username: "Ahmed Hassan",  deviceId: "00:1A:2B:3C:4D:5E", area: "Pool",       lastLogin: "2026-05-14 10:30 AM" },
-  { id: "2", username: "Sara Mohamed",  deviceId: "00:1A:2B:3C:4D:5E", area: "Restaurant", lastLogin: "2026-05-14 09:15 AM" },
-  { id: "3", username: "Khaled Ali",    deviceId: "00:1A:2B:3C:4D:5E", area: "Club",       lastLogin: "2026-05-13 11:45 PM" },
-  { id: "4", username: "Nour Ibrahim",  deviceId: "00:1A:2B:3C:4D:5E", area: "Aquapark",   lastLogin: "2026-05-14 08:20 AM" },
-  { id: "5", username: "Ahmed Mahmoud", deviceId: "00:1A:2B:3C:4D:5E", area: "Cafe",       lastLogin: "2026-05-13 07:30 PM" },
-  { id: "6", username: "Layla Mahmoud", deviceId: "00:1A:2B:3C:4D:5E", area: "Beach",      lastLogin: "2026-05-14 11:00 AM" },
+  {
+    id: "1",
+    username: "Ahmed Hassan",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Pool",
+    lastLogin: "2026-05-14 10:30 AM",
+  },
+  {
+    id: "2",
+    username: "Sara Mohamed",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Restaurant",
+    lastLogin: "2026-05-14 09:15 AM",
+  },
+  {
+    id: "3",
+    username: "Khaled Ali",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Club",
+    lastLogin: "2026-05-13 11:45 PM",
+  },
+  {
+    id: "4",
+    username: "Nour Ibrahim",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Aquapark",
+    lastLogin: "2026-05-14 08:20 AM",
+  },
+  {
+    id: "5",
+    username: "Ahmed Mahmoud",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Cafe",
+    lastLogin: "2026-05-13 07:30 PM",
+  },
+  {
+    id: "6",
+    username: "Layla Mahmoud",
+    deviceId: "00:1A:2B:3C:4D:5E",
+    area: "Beach",
+    lastLogin: "2026-05-14 11:00 AM",
+  },
 ];
 
 function DashboardPage() {
@@ -83,7 +119,9 @@ function DashboardPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1
-                style={{ fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif" }}
+                style={{
+                  fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif",
+                }}
                 className="font-medium text-[48px] leading-[72px] tracking-[0px] text-[#131E30]"
               >
                 Admin Panel
@@ -169,8 +207,12 @@ function DashboardPage() {
                     <td className="px-6 py-4 text-muted-foreground">{u.lastLogin}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <ActionBtn tone="gold" onClick={() => setLogsUser(u)}><EyeIcon /> Logs</ActionBtn>
-                        <ActionBtn tone="navy" onClick={() => setResetUser(u)}><ResetIcon /> Reset</ActionBtn>
+                        <ActionBtn tone="gold" onClick={() => setLogsUser(u)}>
+                          <EyeIcon /> Logs
+                        </ActionBtn>
+                        <ActionBtn tone="navy" onClick={() => setResetUser(u)}>
+                          <ResetIcon /> Reset
+                        </ActionBtn>
                         <ActionBtn tone="red" onClick={() => setDeleteUser(u)}>
                           <TrashIcon /> Delete
                         </ActionBtn>
@@ -211,7 +253,9 @@ function DashboardPage() {
               <dl className="mt-3 space-y-1.5 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted-foreground">Device ID</dt>
-                  <dd className="font-mono text-foreground/80 text-right break-all">{u.deviceId}</dd>
+                  <dd className="font-mono text-foreground/80 text-right break-all">
+                    {u.deviceId}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted-foreground">Area</dt>
@@ -219,12 +263,13 @@ function DashboardPage() {
                 </div>
               </dl>
 
-              <div
-                className="mt-4 flex flex-wrap gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ActionBtn tone="gold" onClick={() => setLogsUser(u)}><EyeIcon /> Logs</ActionBtn>
-                <ActionBtn tone="navy" onClick={() => setResetUser(u)}><ResetIcon /> Reset</ActionBtn>
+              <div className="mt-4 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                <ActionBtn tone="gold" onClick={() => setLogsUser(u)}>
+                  <EyeIcon /> Logs
+                </ActionBtn>
+                <ActionBtn tone="navy" onClick={() => setResetUser(u)}>
+                  <ResetIcon /> Reset
+                </ActionBtn>
                 <ActionBtn tone="red" onClick={() => setDeleteUser(u)}>
                   <TrashIcon /> Delete
                 </ActionBtn>
@@ -239,13 +284,9 @@ function DashboardPage() {
         </section>
       </div>
 
-      {showAddUser && (
-        <AddUserModal onClose={() => setShowAddUser(false)} onAdd={addUser} />
-      )}
+      {showAddUser && <AddUserModal onClose={() => setShowAddUser(false)} onAdd={addUser} />}
 
-      {logsUser && (
-        <LogsModal user={logsUser} onClose={() => setLogsUser(null)} />
-      )}
+      {logsUser && <LogsModal user={logsUser} onClose={() => setLogsUser(null)} />}
 
       {deleteUser && (
         <DeleteUserModal
@@ -286,13 +327,7 @@ function DashboardPage() {
   );
 }
 
-function SignOutModal({
-  onClose,
-  onConfirm,
-}: {
-  onClose: () => void;
-  onConfirm: () => void;
-}) {
+function SignOutModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4 backdrop-blur-sm"
@@ -310,8 +345,7 @@ function SignOutModal({
         </h2>
 
         <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
-          Are you sure you want to sign out? You will be returned to the login
-          page.
+          Are you sure you want to sign out? You will be returned to the login page.
         </p>
 
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
@@ -333,13 +367,7 @@ function SignOutModal({
   );
 }
 
-function NewPasswordModal({
-  onClose,
-  onReset,
-}: {
-  onClose: () => void;
-  onReset: () => void;
-}) {
+function NewPasswordModal({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -363,7 +391,7 @@ function NewPasswordModal({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-3xl bg-card p-6 sm:p-10 shadow-2xl"
       >
-        <h2 className="font-display font-bold text-[28px] leading-none tracking-normal text-navy text-center">
+        <h2 className="font-display font-bold text-[28px] leading-[100%] tracking-[0%] text-[#131E30] text-center">
           New Password
         </h2>
 
@@ -430,8 +458,8 @@ function ResetPasswordModal({
 
         <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
           Are you sure you want to reset the password for{" "}
-          <span className="font-bold text-foreground">{user.username}</span>? A new
-          temporary password will be sent to their registered email.
+          <span className="font-bold text-foreground">{user.username}</span>? A new temporary
+          password will be sent to their registered email.
         </p>
 
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
@@ -474,14 +502,14 @@ function DeleteUserModal({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-lg rounded-3xl bg-card p-6 sm:p-10 shadow-2xl"
       >
-        <h2 className="font-display font-bold text-[28px] leading-none tracking-normal text-destructive">
+        <h2 className="font-avenir text-[24px] font-medium leading-[24px] tracking-normal text-destructive">
           Delete User
         </h2>
 
         <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
           Are you sure you want to delete{" "}
-          <span className="font-bold text-foreground">{user.username}</span>? This
-          action cannot be undone and all user data will be permanently removed.
+          <span className="font-bold text-foreground">{user.username}</span>? This action cannot be
+          undone and all user data will be permanently removed.
         </p>
 
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
@@ -556,13 +584,12 @@ function LogsModal({ user, onClose }: { user: User; onClose: () => void }) {
 
         <div className="mt-6 space-y-4">
           {logs.map((log, i) => (
-            <div
-              key={i}
-              className="rounded-xl border-l-4 border-gold bg-muted/40 px-6 py-4"
-            >
+            <div key={i} className="rounded-xl border-l-4 border-gold bg-muted/40 px-6 py-4">
               <div className="flex items-start justify-between gap-4">
                 <h3
-                  style={{ fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif" }}
+                  style={{
+                    fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif",
+                  }}
                   className="text-[18px] font-medium leading-[24px] tracking-[0px] text-[#131E30]"
                 >
                   {log.event}
@@ -613,7 +640,7 @@ function AddUserModal({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-3xl bg-card p-6 sm:p-10 shadow-2xl"
       >
-        <h2 className="font-display font-bold text-[28px] leading-none tracking-normal text-navy text-center">
+        <h2 className="font-display font-bold text-[28px] leading-[100%] tracking-[0%] text-[#131E30] text-center">
           Add User
         </h2>
 
@@ -713,50 +740,107 @@ function ActionBtn({
 /* Icons */
 function SearchIcon({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
     </svg>
   );
 }
 function AddUserIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="9" cy="8" r="4" /><path d="M2 21c1-4 4-6 7-6s6 2 7 6" /><path d="M19 8v6M16 11h6" />
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21c1-4 4-6 7-6s6 2 7 6" />
+      <path d="M19 8v6M16 11h6" />
     </svg>
   );
 }
 function TrashIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6" />
     </svg>
   );
 }
 function EyeIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 function ResetIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5" />
     </svg>
   );
 }
 function CloseIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   );
 }
 function LogoutIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="3" y="3" width="11" height="18" rx="2" /><path d="M16 12h6m0 0-3-3m3 3-3 3" />
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <rect x="3" y="3" width="11" height="18" rx="2" />
+      <path d="M16 12h6m0 0-3-3m3 3-3 3" />
     </svg>
   );
 }
