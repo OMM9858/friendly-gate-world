@@ -25,7 +25,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Denim wave header */}
-      <div className="relative h-[38vh] min-h-[260px] w-full overflow-hidden">
+      <div className="relative h-[24vh] min-h-[170px] w-full overflow-hidden">
         <img
           src={denimBg}
           alt=""
