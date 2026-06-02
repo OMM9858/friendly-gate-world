@@ -78,12 +78,6 @@ function LoginPage() {
           </div>
         </form>
 
-        <Link
-          to="/dashboard"
-          className="mt-8 text-xs text-muted-foreground hover:text-navy"
-        >
-          Skip to dashboard →
-        </Link>
       </main>
     </div>
   );
