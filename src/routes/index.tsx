@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import denimBg from "@/assets/denim-navy.jpg";
 
@@ -78,12 +78,6 @@ function LoginPage() {
           </div>
         </form>
 
-        <Link
-          to="/dashboard"
-          className="mt-8 text-xs text-muted-foreground hover:text-navy"
-        >
-          Skip to dashboard →
-        </Link>
       </main>
     </div>
   );
@@ -91,8 +85,8 @@ function LoginPage() {
 
 function Logo() {
   return (
-    <div className="flex flex-col items-center -mt-4">
-      <span className="font-display text-7xl text-gold leading-none">M</span>
+    <div className="flex flex-col items-center pt-2">
+      <span className="font-display text-7xl text-gold leading-[0.95]">M</span>
       <span className="tracking-[0.4em] text-navy text-sm mt-2">HOTELS</span>
       <div className="flex items-center gap-2 mt-2">
         <span className="block h-px w-12 bg-gold" />
