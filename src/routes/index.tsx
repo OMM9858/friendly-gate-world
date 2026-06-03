@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import denimBg from "@/assets/denim-navy.jpg";
+import { login } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,10 +17,21 @@ function LoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/dashboard" });
+    setError("");
+    setLoading(true);
+    try {
+      await login(username, password);
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,12 +80,17 @@ function LoginPage() {
             type="password"
           />
 
+          {error && (
+            <p className="text-center text-sm text-destructive -mt-4">{error}</p>
+          )}
+
           <div className="flex justify-center pt-6">
             <button
               type="submit"
-              className="font-display text-2xl bg-navy text-navy-foreground rounded-xl px-14 py-3 shadow-lg hover:opacity-95 transition"
+              disabled={loading}
+              className="font-display text-2xl bg-navy text-navy-foreground rounded-xl px-14 py-3 shadow-lg hover:opacity-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Login
+              {loading ? "Signing in…" : "Login"}
             </button>
           </div>
         </form>

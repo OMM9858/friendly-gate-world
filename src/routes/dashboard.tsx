@@ -1,7 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import {
+  bulkDeleteUsers,
+  createUser,
+  deleteUser as deleteUserApi,
+  getActivityLogs,
+  getUsers,
+  isAuthenticated,
+  logout,
+  resetUserPassword,
+  type ActivityLog,
+  type ApiUser,
+  type Role,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard")({
+  beforeLoad: () => {
+    // The token lives in localStorage (client-only), so guard on the client.
+    // On the server we let it render and let hydration re-run this check.
+    if (typeof window !== "undefined" && !isAuthenticated()) {
+      throw redirect({ to: "/" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Admin Panel — M Hotels" },
@@ -19,74 +40,53 @@ type User = {
   lastLogin: string;
 };
 
-const SEED: User[] = [
-  {
-    id: "1",
-    username: "Ahmed Hassan",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Pool",
-    lastLogin: "2026-05-14 10:30 AM",
-  },
-  {
-    id: "2",
-    username: "Sara Mohamed",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Restaurant",
-    lastLogin: "2026-05-14 09:15 AM",
-  },
-  {
-    id: "3",
-    username: "Khaled Ali",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Club",
-    lastLogin: "2026-05-13 11:45 PM",
-  },
-  {
-    id: "4",
-    username: "Nour Ibrahim",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Aquapark",
-    lastLogin: "2026-05-14 08:20 AM",
-  },
-  {
-    id: "5",
-    username: "Ahmed Mahmoud",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Cafe",
-    lastLogin: "2026-05-13 07:30 PM",
-  },
-  {
-    id: "6",
-    username: "Layla Mahmoud",
-    deviceId: "00:1A:2B:3C:4D:5E",
-    area: "Beach",
-    lastLogin: "2026-05-14 11:00 AM",
-  },
-];
+function mapUser(u: ApiUser): User {
+  return {
+    id: String(u.id),
+    username: u.user.username,
+    deviceId: u.deviceId ?? "—",
+    area: u.area ?? "—",
+    lastLogin: u.lastLogin ? format(new Date(u.lastLogin), "yyyy-MM-dd hh:mm a") : "Never",
+  };
+}
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>(SEED);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkError, setBulkError] = useState("");
   const [showAddUser, setShowAddUser] = useState(false);
   const [logsUser, setLogsUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [resetUser, setResetUser] = useState<User | null>(null);
   const [resetConfirmUser, setResetConfirmUser] = useState<User | null>(null);
+  const [pendingPassword, setPendingPassword] = useState("");
   const [showLogout, setShowLogout] = useState(false);
 
-  const addUser = (username: string) => {
-    setUsers((u) => [
-      ...u,
-      {
-        id: crypto.randomUUID(),
-        username,
-        deviceId: "00:1A:2B:3C:4D:5E",
-        area: "—",
-        lastLogin: "Never",
-      },
-    ]);
+  useEffect(() => {
+    let active = true;
+    getUsers()
+      .then((res) => {
+        if (active) setUsers(res.items.map(mapUser));
+      })
+      .catch((err) => {
+        if (active) setLoadError(err instanceof Error ? err.message : "Failed to load users.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const addUser = async (input: { username: string; password: string; role: Role }) => {
+    const created = await createUser(input);
+    setUsers((u) => [mapUser(created), ...u]);
     setShowAddUser(false);
   };
 
@@ -104,12 +104,29 @@ function DashboardPage() {
     setSelected(next);
   };
 
-  const bulkDelete = () => {
-    setUsers((u) => u.filter((x) => !selected.has(x.id)));
-    setSelected(new Set());
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    const ids = [...selected].map(Number);
+    setBulkError("");
+    setBulkDeleting(true);
+    try {
+      await bulkDeleteUsers(ids);
+      setUsers((u) => u.filter((x) => !selected.has(x.id)));
+      setSelected(new Set());
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : "Failed to delete selected users.");
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const remove = (id: string) => setUsers((u) => u.filter((x) => x.id !== id));
+
+  const emptyMessage = loading
+    ? "Loading users…"
+    : loadError
+      ? loadError
+      : "No users match your search.";
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,10 +178,10 @@ function DashboardPage() {
             </button>
             <button
               onClick={bulkDelete}
-              disabled={selected.size === 0}
+              disabled={selected.size === 0 || bulkDeleting}
               className="inline-flex flex-1 md:flex-none items-center justify-center gap-2 rounded-xl border-2 border-destructive text-destructive px-4 py-2.5 text-sm font-medium hover:bg-destructive hover:text-destructive-foreground transition disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-destructive"
             >
-              <TrashIcon /> Bulk delete
+              <TrashIcon /> {bulkDeleting ? "Deleting…" : "Bulk delete"}
             </button>
             <button
               onClick={() => setShowLogout(true)}
@@ -177,6 +194,8 @@ function DashboardPage() {
         </header>
 
         <div className="mt-6 h-px w-full bg-gold/70" />
+
+        {bulkError && <p className="mt-4 text-sm text-destructive">{bulkError}</p>}
 
         {/* Table — tablet & desktop */}
         <section className="mt-6 hidden md:block rounded-2xl border-2 border-gold overflow-hidden">
@@ -222,8 +241,14 @@ function DashboardPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                      No users match your search.
+                    <td
+                      colSpan={5}
+                      className={
+                        "px-6 py-12 text-center " +
+                        (loadError ? "text-destructive" : "text-muted-foreground")
+                      }
+                    >
+                      {emptyMessage}
                     </td>
                   </tr>
                 )}
@@ -277,8 +302,13 @@ function DashboardPage() {
             </article>
           ))}
           {filtered.length === 0 && (
-            <div className="rounded-2xl border-2 border-gold px-6 py-12 text-center text-muted-foreground">
-              No users match your search.
+            <div
+              className={
+                "rounded-2xl border-2 border-gold px-6 py-12 text-center " +
+                (loadError ? "text-destructive" : "text-muted-foreground")
+              }
+            >
+              {emptyMessage}
             </div>
           )}
         </section>
@@ -292,7 +322,8 @@ function DashboardPage() {
         <DeleteUserModal
           user={deleteUser}
           onClose={() => setDeleteUser(null)}
-          onConfirm={() => {
+          onConfirm={async () => {
+            await deleteUserApi(deleteUser.id);
             remove(deleteUser.id);
             setDeleteUser(null);
           }}
@@ -302,7 +333,8 @@ function DashboardPage() {
       {resetUser && (
         <NewPasswordModal
           onClose={() => setResetUser(null)}
-          onReset={() => {
+          onReset={(password) => {
+            setPendingPassword(password);
             setResetConfirmUser(resetUser);
             setResetUser(null);
           }}
@@ -313,14 +345,21 @@ function DashboardPage() {
         <ResetPasswordModal
           user={resetConfirmUser}
           onClose={() => setResetConfirmUser(null)}
-          onConfirm={() => setResetConfirmUser(null)}
+          onConfirm={async () => {
+            await resetUserPassword(resetConfirmUser.id, pendingPassword);
+            setResetConfirmUser(null);
+            setPendingPassword("");
+          }}
         />
       )}
 
       {showLogout && (
         <SignOutModal
           onClose={() => setShowLogout(false)}
-          onConfirm={() => navigate({ to: "/" })}
+          onConfirm={() => {
+            logout();
+            navigate({ to: "/" });
+          }}
         />
       )}
     </div>
@@ -367,7 +406,13 @@ function SignOutModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: 
   );
 }
 
-function NewPasswordModal({ onClose, onReset }: { onClose: () => void; onReset: () => void }) {
+function NewPasswordModal({
+  onClose,
+  onReset,
+}: {
+  onClose: () => void;
+  onReset: (password: string) => void;
+}) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -376,7 +421,7 @@ function NewPasswordModal({ onClose, onReset }: { onClose: () => void; onReset: 
     e.preventDefault();
     if (!password) return setError("Password is required.");
     if (password !== confirm) return setError("Passwords do not match.");
-    onReset();
+    onReset(password);
   };
 
   return (
@@ -438,8 +483,23 @@ function ResetPasswordModal({
 }: {
   user: User;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const confirm = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await onConfirm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset password.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4 backdrop-blur-sm"
@@ -458,22 +518,26 @@ function ResetPasswordModal({
 
         <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
           Are you sure you want to reset the password for{" "}
-          <span className="font-bold text-foreground">{user.username}</span>? A new temporary
-          password will be sent to their registered email.
+          <span className="font-bold text-foreground">{user.username}</span>? Their existing
+          password will be replaced with the new one you entered.
         </p>
+
+        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-7 py-3 text-lg font-medium text-foreground hover:bg-muted transition"
+            disabled={submitting}
+            className="rounded-xl border border-border bg-card px-7 py-3 text-lg font-medium text-foreground hover:bg-muted transition disabled:opacity-60"
           >
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className="rounded-xl bg-navy px-7 py-3 text-lg font-medium text-gold hover:opacity-90 transition"
+            onClick={confirm}
+            disabled={submitting}
+            className="rounded-xl bg-navy px-7 py-3 text-lg font-medium text-gold hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Reset Password
+            {submitting ? "Resetting…" : "Reset Password"}
           </button>
         </div>
       </div>
@@ -488,8 +552,23 @@ function DeleteUserModal({
 }: {
   user: User;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const confirm = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await onConfirm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4 backdrop-blur-sm"
@@ -512,18 +591,22 @@ function DeleteUserModal({
           undone and all user data will be permanently removed.
         </p>
 
+        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+
         <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-border bg-card px-7 py-3 text-lg font-medium text-foreground hover:bg-muted transition"
+            disabled={submitting}
+            className="rounded-xl border border-border bg-card px-7 py-3 text-lg font-medium text-foreground hover:bg-muted transition disabled:opacity-60"
           >
             Cancel
           </button>
           <button
-            onClick={onConfirm}
-            className="rounded-xl bg-destructive px-7 py-3 text-lg font-medium text-destructive-foreground hover:opacity-90 transition"
+            onClick={confirm}
+            disabled={submitting}
+            className="rounded-xl bg-destructive px-7 py-3 text-lg font-medium text-destructive-foreground hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Delete User
+            {submitting ? "Deleting…" : "Delete User"}
           </button>
         </div>
       </div>
@@ -531,26 +614,35 @@ function DeleteUserModal({
   );
 }
 
-type LogEntry = {
-  event: string;
-  device: string;
-  location: string;
-  time: string;
-};
-
-function logsFor(user: User): LogEntry[] {
-  const device = "iPad Pro";
-  const loc = user.area;
-  return [
-    { event: "Login", device, location: loc, time: "2026-05-14 10:30 AM" },
-    { event: "Failed Login Attempt", device, location: loc, time: "2026-05-14 10:25 AM" },
-    { event: "Logout", device, location: loc, time: "2026-05-13 06:15 PM" },
-    { event: "Login", device, location: loc, time: "2026-05-13 02:00 PM" },
-  ];
+function humanizeEvent(eventType: string): string {
+  return eventType
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 function LogsModal({ user, onClose }: { user: User; onClose: () => void }) {
-  const logs = logsFor(user);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    getActivityLogs(user.id)
+      .then((res) => {
+        if (active) setLogs(res.items);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : "Failed to load logs.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user.id]);
 
   return (
     <div
@@ -583,25 +675,39 @@ function LogsModal({ user, onClose }: { user: User; onClose: () => void }) {
         </p>
 
         <div className="mt-6 space-y-4">
-          {logs.map((log, i) => (
-            <div key={i} className="rounded-xl border-l-4 border-gold bg-muted/40 px-6 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <h3
-                  style={{
-                    fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif",
-                  }}
-                  className="text-[18px] font-medium leading-[24px] tracking-[0px] text-[#131E30]"
-                >
-                  {log.event}
-                </h3>
-                <span className="text-sm text-muted-foreground whitespace-nowrap mt-1">
-                  {log.time}
-                </span>
+          {loading && <p className="py-8 text-center text-muted-foreground">Loading logs…</p>}
+
+          {!loading && error && (
+            <p className="py-8 text-center text-destructive">{error}</p>
+          )}
+
+          {!loading && !error && logs.length === 0 && (
+            <p className="py-8 text-center text-muted-foreground">
+              No activity logs for this user.
+            </p>
+          )}
+
+          {!loading &&
+            !error &&
+            logs.map((log) => (
+              <div key={log.id} className="rounded-xl border-l-4 border-gold bg-muted/40 px-6 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <h3
+                    style={{
+                      fontFamily: "'Avenir LT Std', Avenir, ui-sans-serif, system-ui, sans-serif",
+                    }}
+                    className="text-[18px] font-medium leading-[24px] tracking-[0px] text-[#131E30]"
+                  >
+                    {humanizeEvent(log.eventType)}
+                  </h3>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap mt-1">
+                    {format(new Date(log.createdAt), "yyyy-MM-dd hh:mm a")}
+                  </span>
+                </div>
+                <p className="text-muted-foreground mt-2">Device: {log.deviceId ?? "—"}</p>
+                <p className="text-muted-foreground">Location: {log.area ?? "—"}</p>
               </div>
-              <p className="text-muted-foreground mt-2">Device: {log.device}</p>
-              <p className="text-muted-foreground">Location: {log.location}</p>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>
@@ -613,19 +719,28 @@ function AddUserModal({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (username: string) => void;
+  onAdd: (input: { username: string; password: string; role: Role }) => Promise<void>;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) return setError("User name is required.");
     if (!password) return setError("Password is required.");
     if (password !== confirm) return setError("Passwords do not match.");
-    onAdd(username.trim());
+    setError("");
+    setSubmitting(true);
+    try {
+      await onAdd({ username: username.trim(), password, role: "STAFF" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add user.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -671,15 +786,15 @@ function AddUserModal({
               setError("");
             }}
           />
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex justify-center pt-2">
             <button
               type="submit"
-              className="rounded-xl bg-navy text-navy-foreground px-12 py-3.5 text-lg font-medium hover:opacity-90 transition"
+              disabled={submitting}
+              className="rounded-xl bg-navy text-navy-foreground px-12 py-3.5 text-lg font-medium hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Add User
+              {submitting ? "Adding…" : "Add User"}
             </button>
           </div>
         </form>
