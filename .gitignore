@@ -16,8 +16,11 @@ dist-ssr
 .nitro
 *.local
 
-# Local env overrides (safe place for secrets — never committed)
-.env*.local
+# Env files — never commit real values; commit *.example templates instead
+.env
+.env.*
+!.env.example
+!.env.*.example
 
 # Wrangler / Cloudflare
 .wrangler/
